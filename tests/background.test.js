@@ -23,6 +23,8 @@ test('后台只保存当前分 P，姓名、笔记和回听都绑定同一份逐
   const internal={id:'unit',url:'chrome-extension://unit/src/panel.html',frameId:0};
   const call=(message,sender=internal)=>new Promise(resolve=>{assert.equal(listener(message,sender,resolve),true);});
   const read=await call({type:'READ',tabId:7,videoOnly:true});assert.equal(read.ok,true);assert.equal(read.item.id,id);assert.equal(read.item.p,1);assert.equal(read.item.caption,'公开简介');
+  const page={id:'unit',url:currentUrl,tab:{id:7,url:currentUrl},frameId:0};
+  const beforeTranscript=await call({type:'BILI_NOTE',id},page);assert.equal(beforeTranscript.ok,false);assert.match(beforeTranscript.error,/先生成这条视频的逐字稿/);
   let item=local['bilid_item_'+id];
   item.transcript={mediaKey:item.video.key,duration:60,rows:[{text:'主讲人先说。',start:0,end:5,speaker:'1'},{text:'嘉宾再补充。',start:5,end:10,speaker:'2'}]};
   item.body=transcriptBody(item.caption,item.transcript);item.bodyHash=await hash(item.body);local['bilid_item_'+id]=structuredClone(item);

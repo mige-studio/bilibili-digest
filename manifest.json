@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "B站精读",
   "version": "0.1.0",
-  "version_name": "0.1.0-candidate.1",
+  "version_name": "0.1.0-candidate.2",
   "minimum_chrome_version": "116",
   "description": "把当前 B 站公开视频转成带时间点与说话人编号的逐字稿，并支持精读、总结、笔记和本机保存。",
   "permissions": [
@@ -59,6 +59,6 @@
     "128": "icons/icon128.png"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.bilibili.com https://*.bilivideo.com https://*.bilivideo.cn https://api.deepseek.com https://openspeech.bytedance.com; worker-src 'self'"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.bilibili.com https://*.bilivideo.com:* https://*.bilivideo.cn:* https://api.deepseek.com https://openspeech.bytedance.com; worker-src 'self'"
   }
 }

@@ -71,3 +71,14 @@ test('说话人逐字稿可回听、搜索、画线、解释、总结、记笔�
     $('#follow-video').click();await h.intervals[1]();assert.equal(w.document.querySelector('.transcript-line[data-index="1"]').classList.contains('playing'),true);
   }finally{h.dom.window.close();}
 });
+
+test('失败任务保留已点击痕迹，并给出明确的重新尝试入口',async()=>{
+  const item=makeItem();delete item.transcript;item.body=item.caption;item.bodyHash=await hash(item.body);
+  item.voiceJob={mediaKey:item.video.key,state:'failed',phase:'failed',startedAt:Date.now()-5000,error:'音轨下载连接未建立，请重新加载 B站精读后再试。'};
+  const h=boot(item,async type=>({item:structuredClone(item)}));
+  await tick();
+  try{
+    const button=h.w.document.querySelector('#transcribe-video'),status=h.w.document.querySelector('#video-status');
+    assert.match(button.textContent,/重新尝试 · 生成逐字稿/);assert.match(status.textContent,/上次精读未完成/);assert.match(status.textContent,/已读取的视频资料仍保留/);assert.equal(status.classList.contains('error'),true);
+  }finally{h.dom.window.close();}
+});

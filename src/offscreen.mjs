@@ -30,7 +30,8 @@ async function run(message){
   try{await voiceRequest('submit',message.apiKey,{jobId,resourceId:RESOURCE,whole:true},audio.buffer);}catch(e){outcome={rejected:e.rejected===true,uncertain:e.uncertain===true,notSubmitted:e.notSubmitted===true,error:e.message};}
   await tell('AUDIO_SUBMITTED',{...tag,...outcome});
  }catch(e){
-  const safe=/^(音频|音轨|当前|无法|没有|整期|压缩|浏览器|未取得)/.test(e.message||'')?e.message:'音轨处理未完成，已有资料保留。';
+  const message=e?.message||'';
+  const safe=/^(音频|音轨|当前|无法|没有|整期|压缩|浏览器|未取得)/.test(message)?message:stage==='download'?'音轨下载连接未建立，请重新加载 B站精读后再试。':'音轨处理未完成，已有资料保留。';
   await tell('AUDIO_FAILED',{...tag,error:safe,uncertain:stage==='upload'}).catch(()=>{});
  }finally{clearInterval(heartbeat);active=null;message.apiKey='';message.mediaUrl='';}
 }

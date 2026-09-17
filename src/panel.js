@@ -61,10 +61,12 @@ function renderVideoControls(){
   $('#transcript-options').hidden=!t;$(t?'#transcript-options':'#generation-actions').append($('#transcribe-video'));
   $('#transcribe-video').hidden=!!active;
   $('#transcribe-video').disabled=voiceBusy||!videoEligible(item.video);
-  $('#transcribe-video').textContent=(t?'重新转写（含说话人）':'开始精读 · 生成逐字稿')+(item.video?.duration?'（'+clockTime(item.video.duration)+'）':'');
+  const failed=job&&job.mediaKey===item.video?.key&&job.state==='failed';
+  $('#transcribe-video').textContent=(t?'重新转写（含说话人）':failed?'重新尝试 · 生成逐字稿':'开始精读 · 生成逐字稿')+(item.video?.duration?'（'+clockTime(item.video.duration)+'）':'');
   $('#query-video').hidden=!active;$('#query-video').disabled=voiceBusy;
   $('#current-video').hidden=$('#export-video').hidden=$('#video-times').hidden=$('#follow-video').hidden=$('#note-current').hidden=$('#speaker-settings').hidden=!t;
-  $('#video-status').textContent=active?voiceProgress(job):t?'说话人逐字稿已保存；可搜索、画线、回听并为说话人编号填写姓名。':job?.state==='failed'?job.error:!item.video?.duration?'视频时长尚未确认，请先在原播放器加载后重新读取。':item.video.duration>MAX_VIDEO_SECONDS?'单个分 P 的整场识别上限为五小时；本视频尚未提交。':!item.video.url?({'meta-missing':'当前视频暂未提供可读取音轨。','streams-missing':'当前视频没有可用的公开音轨。'}[item.video.reason]||'尚未找到可读取的音轨。')+' 当前只保留简介。':'点击后只转写当前分 P，并将整段音轨发送给你配置的火山语音服务，可能产生费用。';
+  $('#video-status').classList.toggle('error',!!failed);
+  $('#video-status').textContent=active?voiceProgress(job):t?'说话人逐字稿已保存；可搜索、画线、回听并为说话人编号填写姓名。':failed?'上次精读未完成：'+job.error+' 已读取的视频资料仍保留，可点击“重新尝试”。':!item.video?.duration?'视频时长尚未确认，请先在原播放器加载后重新读取。':item.video.duration>MAX_VIDEO_SECONDS?'单个分 P 的整场识别上限为五小时；本视频尚未提交。':!item.video.url?({'meta-missing':'当前视频暂未提供可读取音轨。','streams-missing':'当前视频没有可用的公开音轨。'}[item.video.reason]||'尚未找到可读取的音轨。')+' 当前只保留简介。':'点击后只转写当前分 P，并将整段音轨发送给你配置的火山语音服务，可能产生费用。';
   $('#boundary').textContent=t?'当前分 P 的视频简介与逐字稿分开保留；说话人编号和重要原话请回听核对。':'当前只有视频简介，尚未生成说话人逐字稿。';
   if(active&&!voiceBusy){clearTimeout(voiceTimer);voiceTimer=setTimeout(()=>attempt(()=>voiceAction('VIDEO_QUERY')),10000);}
   const list=$('#video-time-list');if(list.dataset.rendered===item.id+':'+item.bodyHash+':'+JSON.stringify(item.speakerNames||{}))return;list.dataset.rendered=item.id+':'+item.bodyHash+':'+JSON.stringify(item.speakerNames||{});list.replaceChildren();

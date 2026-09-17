@@ -51,10 +51,10 @@
   const holder=document.createElement('div');
   holder.id='bilid-entry';
   const shadow=holder.attachShadow({mode:'closed'});
-  shadow.innerHTML='<style>:host{position:fixed;right:22px;bottom:86px;z-index:2147483000;display:flex;gap:7px}button{font:600 14px/1.5 system-ui;padding:10px 18px;color:#fff;background:#1684c7;border:1px solid #fff;border-radius:24px;box-shadow:0 3px 16px #0003;cursor:pointer}button.secondary{background:#fff;color:#1678b5;border-color:#cce8f7}button:disabled{opacity:.65;cursor:wait}</style><button id="open" type="button">B站精读</button><button id="note" class="secondary" type="button">记下当前</button>';
+  shadow.innerHTML='<style>:host{position:fixed;z-index:2147483000;pointer-events:none}button{position:absolute;top:16px;pointer-events:auto;font:600 14px/1.5 system-ui;white-space:nowrap;padding:10px 18px;color:#fff;background:#1684c7;border:1px solid #fff;border-radius:24px;box-shadow:0 3px 16px #0003;cursor:pointer}button:hover{background:#0f6fa8}button:focus-visible{outline:3px solid #fff;outline-offset:2px}button.primary{right:126px}button.secondary{right:16px;background:#fff;color:#1678b5;border-color:#cce8f7}button.secondary:hover{background:#eaf4fa}button:disabled{opacity:.65;cursor:wait}</style><button id="open" class="primary" type="button">B站精读</button><button id="note" class="secondary" type="button">记笔记</button>';
   const openButton=shadow.querySelector('#open'),noteButton=shadow.querySelector('#note');
 
-  const finish=(button,text)=>{button.disabled=false;button.textContent=text;setTimeout(()=>{button.textContent=button===openButton?'B站精读':'记下当前';},3000);};
+  const finish=(button,text)=>{button.disabled=false;button.textContent=text;setTimeout(()=>{button.textContent=button===openButton?'B站精读':'记笔记';},3000);};
   openButton.onclick=()=>{
     if(openButton.disabled)return;openButton.disabled=true;openButton.textContent='正在打开…';
     try{chrome.runtime.sendMessage({type:'BILI_OPEN',id:ref()?.id}).then(r=>finish(openButton,r?.ok?'B站精读':r?.error||'请再点一次')).catch(()=>finish(openButton,'请刷新页面后重试'));}
@@ -67,9 +67,15 @@
   };
 
   let last='__initial__';
+  function positionEntry(){
+    const video=player(),rect=video?.getBoundingClientRect();
+    if(!ref()||!rect||rect.width<200||rect.height<120||rect.bottom<=0||rect.right<=0||rect.top>=innerHeight||rect.left>=innerWidth){holder.style.display='none';return;}
+    Object.assign(holder.style,{display:'block',left:`${rect.left}px`,top:`${rect.top}px`,width:`${rect.width}px`,height:`${rect.height}px`});
+  }
   function update(){
     const current=ref();holder.hidden=!current;
     if(!holder.isConnected)document.documentElement.append(holder);
+    positionEntry();
     const next=current?.id||'';
     if(next!==last){last=next;cache=null;chrome.runtime.sendMessage({type:'BILI_SCOPE',id:next||null}).then(r=>{if(!r?.ok&&last===next)last='__retry__';}).catch(()=>{if(last===next)last='__retry__';});}
   }
@@ -94,5 +100,6 @@
   let pending;
   new MutationObserver(()=>{clearTimeout(pending);pending=setTimeout(update,180);}).observe(document.documentElement,{childList:true,subtree:true});
   setInterval(update,750);update();
+  addEventListener('scroll',positionEntry,true);addEventListener('resize',positionEntry);
   addEventListener('pageshow',()=>{last='__refresh__';update();});
 })();

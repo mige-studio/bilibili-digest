@@ -58,7 +58,9 @@ async function handle(msg,sender){
   }
   if(msg.type==='BILI_NOTE'){
     if(!isPage(sender)||!msg.id||noteId(sender.tab.url)!==msg.id)throw new Error('请先打开当前视频。');
-    const result=await handle({type:'NOTE_CURRENT',id:msg.id,tabId:sender.tab.id},{id:chrome.runtime.id,url:chrome.runtime.getURL('src/panel.html')});return {saved:true};
+    const saved=await getItem(msg.id);
+    if(!saved||!currentTranscript(saved))throw new Error('请先生成这条视频的逐字稿，再记笔记。');
+    await handle({type:'NOTE_CURRENT',id:msg.id,tabId:sender.tab.id},{id:chrome.runtime.id,url:chrome.runtime.getURL('src/panel.html')});return {saved:true};
   }
   if(!internal(sender)) throw new Error('此操作只能在B站精读内使用。');
   if(msg.type==='CONTEXT') {const tab=await chrome.tabs.get(msg.tabId);return {id:noteId(tab.url)};}
@@ -117,7 +119,9 @@ async function handle(msg,sender){
   });
   if(msg.type==='VIDEO_STATE'||msg.type==='NOTE_CURRENT'){
     const item=await getItem(msg.id),t=currentTranscript(item);
-    if(!t||noteId((await chrome.tabs.get(msg.tabId)).url)!==msg.id)throw new Error('请先打开这条视频。');
+    if(!item)throw new Error('请先打开 B站精读，读取当前视频。');
+    if(!t)throw new Error('请先生成这条视频的逐字稿，再记笔记。');
+    if(noteId((await chrome.tabs.get(msg.tabId)).url)!==msg.id)throw new Error('视频已经切换，请重新打开 B站精读。');
     const state=await chrome.tabs.sendMessage(msg.tabId,{type:'BILI_VIDEO_STATE',id:msg.id});
     if(!state?.ok||!Number.isFinite(state.time)||Math.abs(state.duration-t.duration)>1)throw new Error('播放器尚未就绪，请先在原页播放视频。');
     if(msg.type==='VIDEO_STATE')return {time:state.time,paused:state.paused};

@@ -4,6 +4,7 @@ test('安装声明只覆盖 B 站当前视频、音轨与两类可选服务',()=
   assert.deepEqual(m.permissions,['storage','sidePanel','offscreen','alarms','unlimitedStorage','declarativeNetRequestWithHostAccess']);
   assert.deepEqual(m.host_permissions,['https://www.bilibili.com/*','https://api.bilibili.com/*']);
   assert.deepEqual(m.optional_host_permissions,['https://api.deepseek.com/*','https://*.bilivideo.com/*','https://*.bilivideo.cn/*','https://openspeech.bytedance.com/*']);assert.equal(m.background.type,'module');
+  assert.match(m.content_security_policy.extension_pages,/https:\/\/\*\.bilivideo\.cn:\*/);assert.match(m.content_security_policy.extension_pages,/https:\/\/\*\.bilivideo\.com:\*/);
   for(const f of [m.background.service_worker,m.side_panel.default_path,m.options_ui.page,...m.content_scripts.flatMap(x=>x.js)])assert.ok(fs.existsSync(new URL(f,root)),f);
   for(const f of fs.readdirSync(new URL('src/',root)).filter(x=>x.endsWith('.js'))){const src=fs.readFileSync(new URL('src/'+f,root),'utf8');for(const [,dep]of src.matchAll(/from ['"]([^'"]+)['"]/g))assert.ok(fs.existsSync(new URL('src/'+path.normalize(dep),root)),dep);}
 });
