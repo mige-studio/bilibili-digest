@@ -1,0 +1,10 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {documents,saveFiles} from '../src/library-files.js';
+const makeDir=(name,dirs=new Map(),files=new Map())=>({name,dirs,files,async getDirectoryHandle(n,{create}={}){if(!dirs.has(n)){if(!create)throw new DOMException('missing','NotFoundError');dirs.set(n,makeDir(n));}return dirs.get(n);},async getFileHandle(n,{create}={}){if(!files.has(n)&&!create)throw new DOMException('missing','NotFoundError');return {getFile:async()=>new Blob([files.get(n)]),createWritable:async()=>({write:async data=>files.set(n,data),close:async()=>{},abort:async()=>{}})};}});
+const item={id:'BV1MA4y1R7J1-p1',bvid:'BV1MA4y1R7J1',cid:'739618564',p:1,title:'长对话/测试',author:'作者',url:'https://www.bilibili.com/video/BV1MA4y1R7J1/?p=1',kind:'video',caption:'介绍',body:'介绍\n\n【视频逐字稿】\n最后一段原话',bodyHash:'hash',video:{key:'video:1',duration:14400},transcript:{mediaKey:'video:1',duration:14400,rows:[{text:'最后一段原话',start:14000,end:14004,speaker:'1'}]},speakerNames:{'1':'嘉宾'},notes:[{quote:'最后一段',bodyHash:'hash',times:[{start:14000,end:14004,speaker:'1'}],thought:'想法',deleted:false,createdAt:'2026-09-16T00:00:00Z'}],overviews:{hash:{chapters:[{title:'结尾',summary:'模拟总结',time:14000}],keyQuotes:[{quote:'最后一段原话'}]}}};
+test('本机资料分为完整资料、逐字稿、概览与笔记，长时间点与姓名保留',()=>{const docs=documents(item);assert.deepEqual(docs.map(d=>d.name),['完整资料','逐字稿','内容概览','我的笔记']);assert.match(docs[1].text,/233:20.*嘉宾/);assert.match(docs[3].text,/想法/);});
+test('选定目录按视频存放，重复保存不制造重复文件，修改后只增副本',async()=>{
+  const root=makeDir('用户选定目录');assert.equal((await saveFiles(root,[item])).written,5);assert.equal((await saveFiles(root,[item])).written,0);
+  const platform=root.dirs.get('B站'),dir=[...platform.dirs.values()][0],original=dir.files.get('完整资料.md');const changed=structuredClone(item);changed.notes[0].thought='新的想法';
+  await saveFiles(root,[changed]);assert.equal(dir.files.get('完整资料.md'),original);assert.match(dir.files.get('完整资料（2）.md'),/新的想法/);assert.ok(!dir.name.includes('/'));
+});

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>B站精读界面校验</title>
+  <link rel="stylesheet" href="../src/style.css">
+</head>
+<body>
+  <header><div class="brand">B站精读</div><div class="tools"><a>我的资料</a><a>设置</a></div></header>
+  <section class="identity"><h1>一场关于 AI 协作的真实对话 · P1</h1><p class="muted">示例作者</p><p class="scope">当前分 P 的说话人逐字稿已保存；重要原话请点击时间回听。</p></section>
+  <nav><button class="active">逐字稿</button><button>内容概览</button><button>我的笔记</button></nav>
+  <p id="status">已保存到“我的资料”。</p>
+  <main>
+    <section class="engagement"><div class="engagement-counts">
+      <span class="engagement-item"><small>播放</small><strong>12.8万</strong></span><span class="engagement-item"><small>弹幕</small><strong>326</strong></span><span class="engagement-item"><small>点赞</small><strong>8,042</strong><span class="engagement-relative">相对 100</span></span><span class="engagement-item"><small>投币</small><strong>2,186</strong><span class="engagement-relative">相对 27.2</span></span>
+    </div></section>
+    <section>
+      <div class="actions reader-toolbar"><button>刷新当前分 P</button><button>回到播放位置</button><button>对应姓名</button></div>
+      <section id="video-controls"><details><summary>逐字稿选项</summary></details><p class="scope">说话人逐字稿已保存；可搜索、画线、回听并为说话人编号填写姓名。</p></section>
+      <div class="searchbar"><input value="协作" aria-label="搜索逐字稿"><span>1/1</span><button>↑</button><button>↓</button></div>
+      <div class="actions transcript-export"><button>导出逐字稿</button></div>
+      <div class="original">公开视频简介
+
+【视频逐字稿】
+        <span class="transcript-line" data-label="0:00 · 说话人 1">我们先不讨论工具，先说这次协作想解决什么问题。</span>
+        <span class="transcript-line playing" data-label="0:08 · 说话人 2">我同意，先把目标、责任人和验收方式说清楚，再决定怎么做。</span>
+        <span class="transcript-line" data-label="0:17 · 说话人 1">好，那就用这个标准来检查本轮结果。</span>
+      </div>
+    </section>
+  </main>
+  <div class="selection" style="left:95px;top:570px"><button>解释这段</button><button>记笔记</button><button>复制原话</button></div>
+  <div class="playback-dock"><button>记下当前原话</button><button>跟随播放：开</button></div>
+</body>
+</html>

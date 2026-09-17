@@ -1,0 +1,13 @@
+{
+  "name": "bilibili-digest",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "package": "python3 scripts/package.py"
+  },
+  "devDependencies": {
+    "jsdom": "26.1.0"
+  }
+}

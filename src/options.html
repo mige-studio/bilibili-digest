@@ -1,0 +1,11 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>B站精读 · 设置</title><link rel="stylesheet" href="style.css"></head><body class="settings"><header><div class="brand">B站精读 · 设置</div><a href="library.html">我的资料</a></header><main><h1>视频概览与解释服务</h1><p>已有逐字稿的阅读、搜索、记笔记和导出可直接使用。生成概览或解释选段时，文字会发送给 DeepSeek，费用由你的服务账户承担。首次转写声音需配置下方火山语音服务。</p><p id="status" role="status">正在读取设置…</p><form id="form"><label for="key">DeepSeek API Key</label><input id="key" type="password" autocomplete="new-password" placeholder="填写 DeepSeek API Key"><button id="key-change" type="button" hidden>更换 Key</button><p class="muted">仅保存在这个扩展的本机设置。不会读取、复制其他插件的 Key，也不随资料导出。</p><label for="model">模型名称</label><input id="model" value="deepseek-v4-flash" autocomplete="off"><div class="toolbar"><button id="save" class="primary" type="button" disabled>保存设置</button><button id="connect" type="button" disabled>允许连接 DeepSeek</button><button id="clear" type="button">清除本扩展服务配置</button></div></form><p id="connection-status" class="muted"></p><section class="voice-settings">
+<h2>视频转写服务</h2>
+<p>火山语音负责把声音转成文字，DeepSeek 负责整理文字。长视频会提取并压缩整场音轨，统一识别文字、时间与说话人。</p>
+<p id="voice-config-status" role="status">正在读取语音配置…</p>
+<label for="voice-key">火山语音 API Key</label>
+<input id="voice-key" type="password" autocomplete="new-password" placeholder="填写火山语音 API Key"><button id="voice-key-change" type="button" hidden>更换 Key</button>
+<p class="muted">使用录音文件识别 2.0。只保存在本扩展，不读取其他插件配置。</p>
+<div class="toolbar"><button id="voice-save" type="button" disabled>保存语音设置</button><button id="voice-import" type="button" disabled>导入语音配置</button><input id="voice-file" type="file" accept="application/json,.json" hidden><button id="voice-connect" type="button" disabled>允许连接火山语音</button></div>
+<p id="voice-permission" class="muted"></p>
+</section>
+<details><summary>数据保存与版本</summary><p>资料与笔记保存在本扩展的 Chrome 本地空间。卸载前请到“我的资料”导出。每个分 P 单独转写，单段上限为 5 小时；不会自动提交整个合集。机器转写和说话人编号请回听核对，长视频识别期间可关闭阅读栏，重新打开后继续查询原任务。</p><p id="version"></p></details></main><script type="module" src="options.js"></script><script type="module" src="voice-options.js"></script></body></html>
