@@ -1,4 +1,4 @@
-import {requestAiCompletion,parseLooseJson} from './ai.js';
+import {requestAiCompletion,parseLooseJson,AI_ORIGIN,DEFAULT_AI_MODEL} from './ai.js';
 import {VOICE_SETTINGS,transcriptRanges,clockTime,currentTranscript,sameVideoSource,transcriptBody,videoEligible,validateTranscript} from './video.js';
 import {createVideoJobs} from './video-jobs.js';
 import {PREFIX,SETTINGS,noteId,normalizeCapture,mergeCapture,makeNote,hash,overviewSegments,validateOverview} from './core.js';
@@ -138,12 +138,11 @@ async function handle(msg,sender){
     if(!transcriptRanges(item).some(r=>msg.start>=r.offset&&msg.start<r.offset+r.length))throw new Error('请选择声音逐字稿中的原话。');
     const key='bilid_explain_'+await hash(item.id+item.bodyHash+msg.start+msg.quote),cached=(await chrome.storage.session.get(key))[key];if(cached)return {text:cached};
     const settings=(await chrome.storage.local.get(SETTINGS))[SETTINGS];
-    if(!settings?.apiKey)throw new Error('请先在设置中配置 DeepSeek 服务。');
-    if(!await chrome.permissions.contains({origins:['https://api.deepseek.com/*']}))throw new Error('请在设置中允许连接 DeepSeek。');
+    if(!settings?.apiKey)throw new Error('请先在设置中配置火山方舟服务。');
+    if(!await chrome.permissions.contains({origins:[AI_ORIGIN]}))throw new Error('请在设置中允许连接火山方舟。');
     const prompt=await (await fetch(chrome.runtime.getURL('prompts/explain.md'))).text();let response;
-    try{response=await fetch('https://api.deepseek.com/chat/completions',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${settings.apiKey}`},body:JSON.stringify({model:settings.model,messages:[{role:'system',content:prompt},{role:'user',content:JSON.stringify({title:item.title,selected:msg.quote,context:item.body.slice(Math.max(0,msg.start-500),msg.start+msg.quote.length+500)})}],thinking:{type:'disabled'},max_tokens:600}),signal:AbortSignal.timeout(25000)});}catch{throw new Error('解释请求未完成，原话仍保留，请稍后重试。');}
-    if(!response.ok)throw new Error('解释服务暂时不可用，请检查配置或稍后重试。');
-    const result=await response.json(),text=result.choices?.[0]?.message?.content;
+    try{response=await requestAiCompletion({settings,messages:[{role:'system',content:prompt},{role:'user',content:JSON.stringify({title:item.title,selected:msg.quote,context:item.body.slice(Math.max(0,msg.start-500),msg.start+msg.quote.length+500)})}],maxTokens:600});}catch{throw new Error('解释请求未完成，原话仍保留，请检查火山方舟配置或稍后重试。');}
+    const text=response.text;
     if(typeof text!=='string'||!text.trim()||text.length>10000)throw new Error('未取得完整解释，请稍后重试。');
     await chrome.storage.session.set({[key]:text});return {text};
   }
@@ -160,13 +159,12 @@ async function handle(msg,sender){
   if(msg.type==='VIDEO_QUERY')return videoJobs.query(msg.id);
   if(msg.type==='SETTINGS_STATUS'){
     const s=(await chrome.storage.local.get(SETTINGS))[SETTINGS]||{};
-    return {configured:!!s.apiKey,model:s.model||'deepseek-v4-flash'};
+    return {configured:!!s.apiKey,model:DEFAULT_AI_MODEL,provider:'ark'};
   }
   if(msg.type==='SAVE_SETTINGS'){
     if(!sender.url.startsWith(chrome.runtime.getURL('src/options.html'))) throw new Error('请从设置页操作');
     const s=(await chrome.storage.local.get(SETTINGS))[SETTINGS]||{};
-    const model=String(msg.model||'deepseek-v4-flash').trim();
-    if(!/^[a-zA-Z0-9._-]{1,100}$/.test(model)) throw new Error('请填写有效的模型名称。');
+    const model=DEFAULT_AI_MODEL;
     const apiKey=typeof msg.apiKey==='string'&&msg.apiKey.trim()?msg.apiKey.trim():s.apiKey||'';
     if(apiKey.length>1000 || /[\r\n]/.test(apiKey))throw new Error('服务配置格式无效');
     await chrome.storage.local.set({[SETTINGS]:{apiKey,model}});
@@ -183,8 +181,8 @@ async function handle(msg,sender){
     if(item?.kind==='video'&&!currentTranscript(item))throw new Error('请先完成视频转写，再生成概览。'); if(!item || item.bodyHash!==msg.bodyHash)throw new Error('正文已变化，请重新读取。');
     if(item.overviews[item.bodyHash]) return {item};
     const settings=(await chrome.storage.local.get(SETTINGS))[SETTINGS];
-    if(!settings?.apiKey)throw new Error('请先在设置中配置你自己的 DeepSeek 服务。');
-    if(!await chrome.permissions.contains({origins:['https://api.deepseek.com/*']})) throw new Error('请在设置中允许连接 DeepSeek。');
+    if(!settings?.apiKey)throw new Error('请先在设置中配置火山方舟服务。');
+    if(!await chrome.permissions.contains({origins:[AI_ORIGIN]})) throw new Error('请在设置中允许连接火山方舟。');
     const jobKey='bilid_job_'+item.id;
     await atomic(async()=>{
       const existing=(await chrome.storage.session.get(jobKey))[jobKey];

@@ -18,8 +18,8 @@ function makeItem(){
 
 function boot(item,handler){
   const dom=new JSDOM(html,{url:'https://preview.test/src/panel.html?tab=9',runScripts:'outside-only',pretendToBeVisual:true}),w=dom.window;
-  const intervals=[];let clipboard='',exported='';
-  w.chrome={runtime:{id:'simulation'},tabs:{query:async()=>[{id:9}],create:async()=>({})}};
+  const intervals=[],storageListeners=[];let clipboard='',exported='';
+  w.chrome={runtime:{id:'simulation'},tabs:{query:async()=>[{id:9}],create:async()=>({})},storage:{onChanged:{addListener:fn=>storageListeners.push(fn)}}};
   w.setInterval=fn=>{intervals.push(fn);return intervals.length;};w.clearInterval=()=>{};w.scrollTo=()=>{};w.scrollBy=()=>{};
   w.HTMLElement.prototype.scrollIntoView=function(){this.dataset.scrolled='true';};w.Range.prototype.getBoundingClientRect=()=>({left:20,top:200,bottom:240});
   w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};
@@ -28,9 +28,9 @@ function boot(item,handler){
   w.action=(label,fn,cls='')=>{const b=w.el('button',label,cls);b.onclick=fn;return b;};
   w.flash=message=>w.document.querySelector('#status').textContent=message;w.attempt=async fn=>{try{await fn();}catch(error){w.flash(error.message);}};
   w.download=(name,text)=>{exported=text;};
-  Object.assign(w,{exportMarkdown,exportNotes,currentTranscript,videoEligible,clockTime,videoMarkdown,transcriptRanges,videoTimeLink,MAX_VIDEO_SECONDS});
+  Object.assign(w,{exportMarkdown,exportNotes,currentTranscript,videoEligible,clockTime,videoMarkdown,transcriptRanges,videoTimeLink,MAX_VIDEO_SECONDS,PREFIX:'bilid_item_'});
   w.send=handler;w.eval(script);
-  return {dom,w,intervals,getClipboard:()=>clipboard,getExported:()=>exported};
+  return {dom,w,intervals,getClipboard:()=>clipboard,getExported:()=>exported,emitItem:next=>storageListeners.forEach(fn=>fn({['bilid_item_'+next.id]:{newValue:structuredClone(next)}},'local'))};
 }
 
 test('阅读栏只保留 B 站视频任务，不混入图文识别',()=>{
@@ -80,5 +80,19 @@ test('失败任务保留已点击痕迹，并给出明确的重新尝试入口',
   try{
     const button=h.w.document.querySelector('#transcribe-video'),status=h.w.document.querySelector('#video-status');
     assert.match(button.textContent,/重新尝试 · 生成逐字稿/);assert.match(status.textContent,/上次精读未完成/);assert.match(status.textContent,/已读取的视频资料仍保留/);assert.equal(status.classList.contains('error'),true);
+  }finally{h.dom.window.close();}
+});
+
+test('页面按钮保存笔记后，已打开的“我的笔记”立即刷新',async()=>{
+  let item=makeItem();item.bodyHash=await hash(item.body);
+  const h=boot(item,async type=>type==='LIST'?{items:[structuredClone(item)]}:{item:structuredClone(item)});
+  await tick();
+  try{
+    const $=selector=>h.w.document.querySelector(selector);
+    $('[data-view="notes"]').click();await tick();assert.match($('#notes').textContent,/拖选一段文字/);
+    item.notes.push(makeNote(item,'第一位说话人先提出问题。',item.body.indexOf('第一位说话人')));
+    h.emitItem(item);await tick();await tick();
+    assert.match($('#notes').textContent,/第一位说话人先提出问题/);
+    assert.doesNotMatch($('#notes').textContent,/拖选一段文字/);
   }finally{h.dom.window.close();}
 });

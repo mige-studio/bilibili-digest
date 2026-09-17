@@ -1,6 +1,6 @@
 import {currentTranscript,videoEligible,clockTime,videoMarkdown,transcriptRanges,videoTimeLink,MAX_VIDEO_SECONDS} from './video.js';
 import {send,el,action,flash,attempt,download} from './client.js';
-import {exportMarkdown,exportNotes} from './core.js';
+import {exportMarkdown,exportNotes,PREFIX} from './core.js';
 const $=s=>document.querySelector(s);
 let tabId=null,voiceBusy=false,voiceTimer=null,voicePolls=0;
 async function bindTab(){
@@ -170,7 +170,7 @@ function renderOverview(){
     const b=action('生成内容概览',()=>attempt(async()=>{
       b.disabled=true;const id=item.id,bodyHash=item.bodyHash;flash('正在生成概览，原文和笔记仍可阅读…');
       try{const r=await send('OVERVIEW',{id,bodyHash});if(item?.id===id){item=r.item;if(view==='overview')renderOverview();flash(r.item.overviews[bodyHash]?.omittedQuotes?'概览已保存；无法逐字核对的引用已省略。':'概览已保存。');}}finally{b.disabled=false;}
-    }),'primary');box.append(b,el('p','点击后将正文发送至你配置的 DeepSeek 服务。','muted'));return;
+    }),'primary');box.append(b,el('p','点击后将正文发送至已配置的火山方舟服务。','muted'));return;
   }
   box.append(el('h2','内容章节'));
   for(const c of summary.chapters){
@@ -198,6 +198,17 @@ async function renderNotes(){
   const deleted=data.flatMap(source=>source.notes.filter(n=>n.deleted).map(n=>({source,n})));
   if(deleted.length){const details=el('details');details.append(el('summary',`回收站（${deleted.length}）`));for(const {source,n}of deleted){const row=el('article','','card trash');row.append(el('p',n.quote,'quote'),action('恢复笔记',()=>attempt(async()=>{const r=await send('UNDO_NOTE',{id:source.id,noteId:n.id});if(item?.id===source.id)item=r.item;await renderNotes();flash('笔记已恢复。');})));details.append(row);}box.append(details);}
 }
+let noteRefreshTimer;
+chrome.storage?.onChanged?.addListener((changes,area)=>{
+  if(area!=='local'||!item)return;
+  const changed=changes[PREFIX+item.id]?.newValue;
+  if(!changed||changed.id!==item.id)return;
+  item=changed;
+  if(view==='notes'){
+    clearTimeout(noteRefreshTimer);
+    noteRefreshTimer=setTimeout(()=>attempt(renderNotes),0);
+  }
+});
 let scrollTimer;addEventListener('scroll',()=>{
   clearTimeout(scrollTimer);if(!item||view!=='text'||$('#search').value)return;
   const id=item.id,bodyHash=item.bodyHash;scrollTimer=setTimeout(()=>{const height=document.documentElement.scrollHeight-innerHeight;send('POSITION',{id,bodyHash,position:height>0?scrollY/height:0}).catch(()=>{});},300);

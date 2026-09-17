@@ -1,4 +1,8 @@
-// AI response handling reused from Douyin Digest 0.2.2 (MIT).
+// AI response handling reused from Douyin Digest 0.3.0 (MIT).
+export const AI_ORIGIN='https://ark.cn-beijing.volces.com/*';
+export const AI_ENDPOINT='https://ark.cn-beijing.volces.com/api/v3/chat/completions';
+export const DEFAULT_AI_MODEL='ep-20260130101355-jzs66';
+export const AI_LABEL='火山方舟';
 const AI_PROVIDER_IDLE_TIMEOUT_MS=50000,AI_PROVIDER_HARD_TIMEOUT_MS=120000,AI_PROVIDER_MAX_RESPONSE_BYTES=2*1024*1024;
 export async function requestAiCompletion({
   settings,
@@ -9,13 +13,13 @@ export async function requestAiCompletion({
 }) {
   if (!settings.apiKey) {
     const error = new Error(
-      "尚未配置 DeepSeek API 密钥，请打开 B站精读 设置。",
+      `尚未配置${AI_LABEL} API 密钥，请打开 B站精读 设置。`,
     );
     error.code = "NO_AI_KEY";
     throw error;
   }
   const body = {
-    model: settings.model,
+    model: settings.model||DEFAULT_AI_MODEL,
     max_tokens: maxTokens,
     messages,
   };
@@ -50,7 +54,7 @@ export async function requestAiCompletion({
   resetIdleTimeout();
   try {
     const response = await fetch(
-      'https://api.deepseek.com/chat/completions',
+      AI_ENDPOINT,
       {
         method: "POST",
         headers: {
@@ -61,15 +65,14 @@ export async function requestAiCompletion({
         signal: controller.signal,
       },
     );
-    // Receiving headers proves DeepSeek is still making progress. DeepSeek
-    // may then send blank-line body chunks while a non-streaming request queues.
+    // Receiving headers proves the Ark endpoint is still making progress.
     resetIdleTimeout();
 
     const data = await readBoundedAiResponse(response, resetIdleTimeout);
     if (!response.ok) {
       const errorData = data && typeof data === "object" ? data : {};
       const error = new Error(
-        `DeepSeek 请求失败（${response.status}），请检查设置、余额或稍后重试。`,
+        `${AI_LABEL} 请求失败（${response.status}），请检查设置、余额或稍后重试。`,
       );
       error.status = response.status;
       throw error;
@@ -77,7 +80,7 @@ export async function requestAiCompletion({
 
     const text = data.choices?.[0]?.message?.content;
     if (typeof text !== "string" || !text.trim()) {
-      const error = new Error("DeepSeek 返回了空结果，请重试。");
+      const error = new Error(`${AI_LABEL} 返回了空结果，请重试。`);
       error.code = "EMPTY_AI_RESPONSE";
       throw error;
     }
@@ -86,14 +89,14 @@ export async function requestAiCompletion({
   } catch (error) {
     if (timeoutKind === "idle") {
       const timeoutError = new Error(
-        "DeepSeek 连续 50 秒没有返回内容，请重试。",
+        `${AI_LABEL} 连续 50 秒没有返回内容，请重试。`,
       );
       timeoutError.code = "AI_IDLE_TIMEOUT";
       throw timeoutError;
     }
     if (timeoutKind === "hard") {
       const timeoutError = new Error(
-        "DeepSeek 请求超过 120 秒，请重试。",
+        `${AI_LABEL} 请求超过 120 秒，请重试。`,
       );
       timeoutError.code = "AI_HARD_TIMEOUT";
       throw timeoutError;
@@ -114,13 +117,13 @@ async function readBoundedAiResponse(response, onActivity) {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      // Every received chunk is activity, including DeepSeek's blank lines.
+      // Every received chunk is activity, including blank keep-alive lines.
       onActivity();
       const byteLength = value?.byteLength ?? 0;
       responseBytes += byteLength;
       if (responseBytes > AI_PROVIDER_MAX_RESPONSE_BYTES) {
         await reader.cancel?.().catch(() => {});
-        const error = new Error("DeepSeek 返回内容过大，已超过 2 MiB 限制。" );
+        const error = new Error(`${AI_LABEL} 返回内容过大，已超过 2 MiB 限制。`);
         error.code = "AI_RESPONSE_TOO_LARGE";
         throw error;
       }
@@ -137,7 +140,7 @@ async function readBoundedAiResponse(response, onActivity) {
     onActivity();
     const byteLength = new TextEncoder().encode(responseText).byteLength;
     if (byteLength > AI_PROVIDER_MAX_RESPONSE_BYTES) {
-      const error = new Error("DeepSeek 返回内容过大，已超过 2 MiB 限制。" );
+      const error = new Error(`${AI_LABEL} 返回内容过大，已超过 2 MiB 限制。`);
       error.code = "AI_RESPONSE_TOO_LARGE";
       throw error;
     }
@@ -175,4 +178,3 @@ export function parseLooseJson(text) {
     return JSON.parse(repaired);
   }
 }
-

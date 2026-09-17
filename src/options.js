@@ -1,6 +1,6 @@
 import {savedKey} from './saved-key.js';
 import {send,flash} from './client.js';
-const $=s=>document.querySelector(s),origins=['https://api.deepseek.com/*'];
+const $=s=>document.querySelector(s),origins=['https://ark.cn-beijing.volces.com/*'];
 const key=savedKey($('#key'),$('#key-change'));
 let busy=true,configured=false;
 function controls(){
@@ -37,7 +37,7 @@ $('#connect').onclick=()=>{
   try{request=chrome.permissions.request({origins});}catch{request=Promise.reject();}
   Promise.resolve(request).then(async allowed=>{
     if(!allowed){flash('设置已保存；尚未允许连接，可稍后再试。');return;}
-    await status();flash('设置已保存，连接权限已开启。可以回到 B 站视频生成概览或解释选段。');
+    await status();flash('设置已保存，火山方舟连接已开启。可以回到 B 站视频生成概览或解释选段。');
   }).catch(()=>flash('设置已保存；连接授权暂未完成，可稍后再试。'))
     .finally(()=>{busy=false;controls();});
 };

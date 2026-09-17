@@ -31,7 +31,7 @@ test('重新打开只显示配置状态，空白保存保留Key，单独允许�
  try{
   assert.match(p.$('#status').textContent,/已保存服务配置/);assert.equal(p.$('#key').value,'••••••••');assert.ok(!p.w.document.body.textContent.includes('unit-test-placeholder'));
   p.$('#save').click();await tick();assert.equal(p.stored.apiKey,'unit-test-placeholder');
-  p.allow();p.$('#connect').click();await tick();assert.equal(p.$('#connect').hidden,true);assert.match(p.$('#status').textContent,/连接权限已开启/);
+  p.allow();p.$('#connect').click();await tick();assert.equal(p.$('#connect').hidden,true);assert.match(p.$('#status').textContent,/火山方舟连接已开启/);
  }finally{p.dom.window.close();}
 });
 test('保存失败不清输入且不跳页，表单回车也阻止默认导航',async()=>{
