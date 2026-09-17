@@ -33,7 +33,7 @@ for name,data in list(contents.items()):
    if '://' in target:continue
    path=str(Path(name).parent/target)
    if path not in contents:raise SystemExit('缺少页面资源：'+path)
-status='local-candidate-not-accepted'
+status='accepted-release'
 meta={'name':'bilibili-digest','version':version,'sourceCommit':revision,'status':status,'files':{n:hashlib.sha256(d).hexdigest() for n,d in contents.items()}}
 contents['BUILD.json']=(json.dumps(meta,ensure_ascii=False,indent=2)+'\n').encode()
 out=root/'dist';out.mkdir(exist_ok=True)
